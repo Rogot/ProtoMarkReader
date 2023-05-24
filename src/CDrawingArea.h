@@ -11,7 +11,7 @@
 #define SCROLL_SCALE_STEP 0.25
 #define DS_NORM_MAX	65535
 
-//extern std::atomic<bool> IO_flag;
+extern std::atomic<bool> IO_flag;
 
 class CUsb;
 
@@ -40,6 +40,8 @@ public:
 	double Ymax = std::numeric_limits<double>::lowest(); //job maximum Y
 	double Xmin = std::numeric_limits<double>::max(); //job minimum X
 	double Ymin = std::numeric_limits<double>::max(); //job minimum Y
+	double DSmin = std::numeric_limits<double>::max(); //job minimum DutyCucly
+	double DSmax = std::numeric_limits<double>::lowest(); //job maximum DutyCucly
 
 	std::vector<Point> points;
 
@@ -53,6 +55,14 @@ public:
 		signal_motion_notify_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_motion_notify_event));
 		signal_button_press_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_button_press));
 		signal_button_release_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_button_release));
+
+		for (int i = 0; i < 100; i++){
+			Point p;
+			p.x = i;
+			p.y = i;
+			p.dutyCycle = (double)i / (double)100;
+			points.push_back(p);
+		}
 	}
 
 private:

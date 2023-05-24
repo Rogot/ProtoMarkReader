@@ -274,12 +274,12 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="lable_coord_z">
+                  <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">z</property>
+                    <property name="label" translatable="yes">0.0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Sans Bold 13"/>
+                      <attribute name="font-desc" value="Sans Bold 12"/>
                     </attributes>
                   </object>
                   <packing>
@@ -289,14 +289,30 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="entry_coord_z">
+                  <object class="GtkImage">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="pixbuf">../../Загрузки/image.jpg</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">1.0</property>
+                    <attributes>
+                      <attribute name="font-desc" value="Sans Bold 12"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">6</property>
                   </packing>
                 </child>
               </object>

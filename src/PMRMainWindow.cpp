@@ -30,8 +30,8 @@ PMRMainWindow::PMRMainWindow(BaseObjectType *cobject,
 					sigc::mem_fun(*this, &PMRMainWindow::OnButtonClosePortClicked));
 	m_button_upload_points->signal_clicked().connect(
 						sigc::mem_fun(*this, &PMRMainWindow::UploadPointsClicked));
-//	m_button_clear_points->signal_clicked().connect(
-//							sigc::mem_fun(*this, &PMRMainWindow::ClearPointsClicked));
+	m_button_clear_points->signal_clicked().connect(
+							sigc::mem_fun(*this, &PMRMainWindow::ClearPointsClicked));
 
 	/* Initial values */
 	m_com_select->set_text(DEFAULT_COM_PORT_NAME);

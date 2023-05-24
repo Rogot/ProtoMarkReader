@@ -4,7 +4,6 @@
 bool CDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
 	std::valarray<double> dashed = { 5.0, 5.0 };
 	std::valarray<double> solid = { };
-	Point p;
 	dashed[0] /= scale;
 	dashed[1] /= scale;
 	height = CDrawingArea::get_allocated_height();
@@ -17,18 +16,42 @@ bool CDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
 
 	if(points.size()>0){
 		//uint16_to_double(data_buffer,points);
-		cr->move_to(points[1].x, double(height / scale ) - points[1].y);
-		for(size_t i = 2; i < points.size(); i++)
+		cr->move_to(points[0].x, double(height / scale ) - points[0].y);
+		for(size_t i = 1; i < points.size(); i++)
 		{
 			if (points[i].x != 0 && points[i].y != 0){
-				p.x = points[i].x;
-				p.y = points[i].y;
-				p.dutyCycle = points[i].dutyCycle;
-				cr->line_to(p.x, double(height / scale ) - p.y);
-				cr->set_source_rgb(p.dutyCycle, 0, p.dutyCycle);
+				cr->move_to(points[i].x, double(height / scale ) - points[i].y);
+//				cr->line_to(points[i].x, double(height / scale ) - points[i].y);
+//				if (points[i].dutyCycle < 0.05)
+//					cr->set_source_rgb(0, 0, 0);
+				if (points[i].dutyCycle <= 0.3)
+					cr->set_source_rgb(0, 0, points[i].dutyCycle / 0.3);
+				else if (points[i].dutyCycle > 0.3 && points[i].dutyCycle <= 0.6)
+					cr->set_source_rgb(0, (points[i].dutyCycle - 0.3) / 0.3,
+							1);
+				else if (points[i].dutyCycle > 0.6
+						&& points[i].dutyCycle <= 0.95)
+					cr->set_source_rgb((points[i].dutyCycle - 0.6) / 0.35, 1,
+							0.4);
+				else if (points[i].dutyCycle > 0.95)
+					cr->set_source_rgb(points[i].dutyCycle, 0.5, 0.5);
+
+				if (1 / scale > 1){
+					cr->arc(points[i].x, double(height / scale) - points[i].y, 1 / scale,
+							0, 2 * 3.14);
+				} else {
+					cr->arc(points[i].x, double(height / scale) - points[i].y, 1,
+												0, 2 * 3.14);
+				}
+				cr->fill();
+
+				if (1 / scale == 1){
+					i += int(points.size() / scale * 100);
+				}
+//				cr->stroke();
 			}
 		}
-		cr->stroke();
+//		cr->stroke();
 	}
 	return 0;
 }
@@ -66,10 +89,7 @@ bool CDrawingArea::on_button_press(GdkEventButton *event) {
 //		if(p.x < Xmin) Xmin = p.x;
 //		if(p.y > Ymax) Ymax = p.y;
 //		if(p.y < Ymin) Ymin = p.y;
-//		uint16_to_double(data_buffer, points);
-//		data_buffer.clear();
-//		points.clear();
-		queue_draw();
+//		queue_draw();
 	}
 	if (event->button == GDK_BUTTON_MIDDLE) {
 		mbx = event->x;
@@ -144,20 +164,15 @@ void CDrawingArea::FitView() {
 void CDrawingArea::uint16_to_double(const std::vector<CUsb::t_DATA> &src) {
 	Point p;
 
-//	if (!IO_flag) {
+	if (!IO_flag) {
 		for (int i = 0; i < src.size(); i++) {
-
-			if (i > 200) {;
-				int a = 0;
-				a++;
-			}
-
 			p.x = (double) src[i].x;
 			p.y = (double) src[i].y;
 			p.dutyCycle = (double) src[i].dutyCycle / (double) DS_NORM_MAX;
-			points.push_back(p);
+//			points.push_back(p);
 
-			if (points[i].x != 0 && points[i].y != 0) {
+			if (src[i].x != 0 && src[i].y != 0) {
+				points.push_back(p);
 				if (p.x > Xmax)
 					Xmax = p.x;
 				if (p.x < Xmin)
@@ -166,9 +181,13 @@ void CDrawingArea::uint16_to_double(const std::vector<CUsb::t_DATA> &src) {
 					Ymax = p.y;
 				if (p.y < Ymin)
 					Ymin = p.y;
+				if (p.dutyCycle > DSmax)
+					DSmax = p.dutyCycle;
+				if (p.dutyCycle < DSmin)
+					DSmin = p.dutyCycle;
 			}
 		}
-//		queue_draw();
-//	}
+		queue_draw();
+	}
 
 }
