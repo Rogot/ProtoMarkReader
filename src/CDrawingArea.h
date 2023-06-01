@@ -5,7 +5,12 @@
 #include <gtkmm/main.h>
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
+#include <atomic>
+#include <thread>
+#include <mutex>
+
 #include "c_usb.h"
+#include "gradient.h"
 
 #define NORMAL_LENGTH 20
 #define SCROLL_SCALE_STEP 0.25
@@ -21,16 +26,19 @@ struct Point {
 	double x;
 	double y;
 	double dutyCycle;
+	double r;
+	double g;
+	double b;
 };
 
 class CDrawingArea: public Gtk::DrawingArea {
-
 public:
 
 	PMRMainWindow *m_window_main;
 	Gtk::Entry *m_entry_x;
 	Gtk::Entry *m_entry_y;
-
+	Gtk::Entry *m_entry_scale;
+	Gradient* gradient_interpol = new Gradient();
 
 	bool mb_down = false;
 	int height, width;
@@ -44,6 +52,16 @@ public:
 	double DSmax = std::numeric_limits<double>::lowest(); //job maximum DutyCucly
 
 	std::vector<Point> points;
+
+public:
+
+	void FitView();
+
+	void uint16_to_double(const std::vector<CUsb::t_DATA>& src);
+	void set_rgb(std::vector<Point>& src);
+	void print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i);
+	void print_line(const Cairo::RefPtr<Cairo::Context> &cr, int i);
+
 
 	CDrawingArea(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) :
 			Gtk::DrawingArea(cobject) {
@@ -63,6 +81,12 @@ public:
 			p.dutyCycle = (double)i / (double)100;
 			points.push_back(p);
 		}
+		DSmax = 0.99;
+		DSmin = 0;
+//		gradient_interpol->add_grad(DSmin, DSmax/3, {0.f,0.f,0.f}, {0.5f,0.f,0.f});
+//		gradient_interpol->add_grad(DSmax/3, DSmax*2/3, {0.5f,0.f,0.f}, {0.5f,0.f,1.f});
+//		gradient_interpol->add_grad(DSmax*2/3, DSmax, {0.5f,0.f,1.f}, {0.5f,1.f,0.5f});
+//		set_rgb(points);
 	}
 
 private:
@@ -71,12 +95,6 @@ private:
 	virtual bool on_button_press(GdkEventButton *event);
 	virtual bool on_button_release(GdkEventButton *event);
 	virtual bool on_motion_notify_event(GdkEventMotion *event);
-
-public:
-
-	void FitView();
-
-	void uint16_to_double(const std::vector<CUsb::t_DATA>& src);
 };
 
 #endif /* CDRAWINGAREA_H_ */

@@ -1,6 +1,28 @@
 #include "PMRMainWindow.h"
 #include <cmath>
 
+void CDrawingArea::print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i) {
+	cr->move_to(points[i].x, double(height / scale) - points[i].y);
+
+	cr->set_source_rgb(points[i].r, points[i].g, points[i].b);
+
+	if (2 / scale >= 5) {
+		cr->arc(points[i].x, double(height / scale) - points[i].y, 2 / scale, 0,
+				2 * 3.14);
+	} else {
+		cr->arc(points[i].x, double(height / scale) - points[i].y, 5, 0,
+				2 * 3.14);
+	}
+	cr->fill();
+}
+
+void CDrawingArea::print_line(const Cairo::RefPtr<Cairo::Context> &cr, int i) {
+	cr->line_to(points[i].x, double(height / scale ) - points[i].y);
+	cr->set_source_rgb(points[i].r, points[i].g, points[i].b);
+	cr->stroke();
+	cr->move_to(points[i].x, double(height / scale ) - points[i].y);
+}
+
 bool CDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
 	std::valarray<double> dashed = { 5.0, 5.0 };
 	std::valarray<double> solid = { };
@@ -13,45 +35,26 @@ bool CDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
 	cr->set_line_width(1 / scale);
 	cr->scale(scale, scale);
 	cr->translate(tx, ty);
+	m_entry_scale->set_text(std::to_string(scale));
 
 	if(points.size()>0){
-		//uint16_to_double(data_buffer,points);
 		cr->move_to(points[0].x, double(height / scale ) - points[0].y);
 		for(size_t i = 1; i < points.size(); i++)
 		{
 			if (points[i].x != 0 && points[i].y != 0){
-				cr->move_to(points[i].x, double(height / scale ) - points[i].y);
-//				cr->line_to(points[i].x, double(height / scale ) - points[i].y);
-//				if (points[i].dutyCycle < 0.05)
-//					cr->set_source_rgb(0, 0, 0);
-				if (points[i].dutyCycle <= 0.3)
-					cr->set_source_rgb(0, 0, points[i].dutyCycle / 0.3);
-				else if (points[i].dutyCycle > 0.3 && points[i].dutyCycle <= 0.6)
-					cr->set_source_rgb(0, (points[i].dutyCycle - 0.3) / 0.3,
-							1);
-				else if (points[i].dutyCycle > 0.6
-						&& points[i].dutyCycle <= 0.95)
-					cr->set_source_rgb((points[i].dutyCycle - 0.6) / 0.35, 1,
-							0.4);
-				else if (points[i].dutyCycle > 0.95)
-					cr->set_source_rgb(points[i].dutyCycle, 0.5, 0.5);
 
-				if (1 / scale > 1){
-					cr->arc(points[i].x, double(height / scale) - points[i].y, 1 / scale,
-							0, 2 * 3.14);
-				} else {
-					cr->arc(points[i].x, double(height / scale) - points[i].y, 1,
-												0, 2 * 3.14);
+				if (scale > 0.7) {
+					print_arc(cr, i);
 				}
-				cr->fill();
 
-				if (1 / scale == 1){
-					i += int(points.size() / scale * 100);
+				else {
+					print_line(cr, i);
+					if (1 / scale != 1) {
+						i += int(1 / scale);
+					}
 				}
-//				cr->stroke();
 			}
 		}
-//		cr->stroke();
 	}
 	return 0;
 }
@@ -169,7 +172,6 @@ void CDrawingArea::uint16_to_double(const std::vector<CUsb::t_DATA> &src) {
 			p.x = (double) src[i].x;
 			p.y = (double) src[i].y;
 			p.dutyCycle = (double) src[i].dutyCycle / (double) DS_NORM_MAX;
-//			points.push_back(p);
 
 			if (src[i].x != 0 && src[i].y != 0) {
 				points.push_back(p);
@@ -187,7 +189,28 @@ void CDrawingArea::uint16_to_double(const std::vector<CUsb::t_DATA> &src) {
 					DSmin = p.dutyCycle;
 			}
 		}
+//		set_rgb(points);
 		queue_draw();
 	}
+}
 
+void CDrawingArea::set_rgb(std::vector<Point> &src) {
+
+	Gradient::Color temp_col;
+
+	if (gradient_interpol->gradient.size() == 0) {
+		for (int i = 0; i < src.size(); i++) {
+			src[i].r = 0.0f;
+			src[i].g = 0.0f;
+			src[i].b = 0.0f;
+		}
+	} else {
+
+		for (int i = 0; i < src.size(); i++) {
+			temp_col = gradient_interpol->interpolate(src[i].dutyCycle);
+			src[i].r = temp_col.r;
+			src[i].g = temp_col.g;
+			src[i].b = temp_col.b;
+		}
+	}
 }

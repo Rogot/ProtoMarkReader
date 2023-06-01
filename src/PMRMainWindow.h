@@ -12,24 +12,39 @@
 #include <signal.h>
 
 #include "CDrawingArea.h"
+#include "utils.h"
 
-#define UI "part1.glade"
+#define UI "UIProtomarkReader.glade"
 #define DEFAULT_COM_PORT_NAME "/dev/ttyACM0"
 
 
 class PMRMainWindow: public Gtk::Window {
+protected:
+	std::mutex m_gradient_update_mutex;
+	std::thread* m_gradient_thread = NULL;
 	friend void signal_handler_IO(int status);
 
 protected:
 	Glib::RefPtr<Gtk::Builder> m_builder;
-	Gtk::Entry *m_entry_coord_x, *m_entry_coord_y, *m_entry_coord_z;
 	Gtk::Button *m_button_open_port, *m_button_close_port,
 				*m_button_upload_points, *m_button_clear_points;
 	CDrawingArea *m_drawing_area;
+//	GradientDrawingArea *m_gradient_drawing_area;
 	CUsb *m_c_usb;
 	Gtk::ImageMenuItem *m_menu_file_open;
+	/* COM page */
 	Gtk::MenuBar *mbar;
 	Gtk::Entry *m_com_select;
+
+	/* Display page */
+	Gtk::Entry *m_entry_min_r, *m_entry_min_g, *m_entry_min_b;
+	Gtk::Entry *m_entry_max_r, *m_entry_max_g, *m_entry_max_b;
+	Gtk::Entry *m_entry_min_argument_value, *m_entry_max_argument_value;
+	Gtk::Button *m_button_add_gradient_boarders;
+	Gtk::Button *m_button_clear_gradient_boarders;
+
+	bool is_add_grad = false;
+	bool is_clear_grad = false;
 
 public:
 	//Signal handlers:
@@ -38,6 +53,8 @@ public:
 	void OpenFileActivate();
 	void UploadPointsClicked();
 	void ClearPointsClicked();
+	void OnButtonAddGradientBoardClicked();
+	void OnButtonClearGradientBoardClicked();
 
 public:
 	PMRMainWindow(BaseObjectType *cobject,
@@ -48,7 +65,9 @@ public:
 	}
 	~PMRMainWindow();
 
-//	void uint16_to_double(std::vector<CUsb::t_DATA>& src, std::vector<Point>& dst);
+public:
+	/* Extra thread func */
+	void update_points();
 };
 
 #endif // PMRMAINWINDOW_H
