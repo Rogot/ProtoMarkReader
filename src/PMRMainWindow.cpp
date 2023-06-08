@@ -13,7 +13,7 @@ PMRMainWindow::PMRMainWindow(BaseObjectType *cobject,
 	m_builder->get_widget("entry_coord_x", m_drawing_area->m_entry_x);
 	m_builder->get_widget("entry_coord_y", m_drawing_area->m_entry_y);
 	m_builder->get_widget("entry_scale", m_drawing_area->m_entry_scale);
-//		m_builder->get_widget("entry_coord_z", m_entry_coord_z);
+
 	/* COM page */
 	m_builder->get_widget("button_open_port", m_button_open_port);
 	m_builder->get_widget("button_close_port", m_button_close_port);

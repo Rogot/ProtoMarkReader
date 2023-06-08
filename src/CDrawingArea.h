@@ -38,7 +38,8 @@ public:
 	Gtk::Entry *m_entry_x;
 	Gtk::Entry *m_entry_y;
 	Gtk::Entry *m_entry_scale;
-	Gradient* gradient_interpol = new Gradient();
+
+	Gradient* gradient_interpol;
 
 	bool mb_down = false;
 	int height, width;
@@ -74,6 +75,8 @@ public:
 		signal_button_press_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_button_press));
 		signal_button_release_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_button_release));
 
+		gradient_interpol = new Gradient();
+
 		for (int i = 0; i < 100; i++){
 			Point p;
 			p.x = i;
@@ -83,10 +86,6 @@ public:
 		}
 		DSmax = 0.99;
 		DSmin = 0;
-//		gradient_interpol->add_grad(DSmin, DSmax/3, {0.f,0.f,0.f}, {0.5f,0.f,0.f});
-//		gradient_interpol->add_grad(DSmax/3, DSmax*2/3, {0.5f,0.f,0.f}, {0.5f,0.f,1.f});
-//		gradient_interpol->add_grad(DSmax*2/3, DSmax, {0.5f,0.f,1.f}, {0.5f,1.f,0.5f});
-//		set_rgb(points);
 	}
 
 private:
