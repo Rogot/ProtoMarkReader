@@ -1,18 +1,22 @@
 #include "PMRMainWindow.h"
 #include <cmath>
 
+double CDrawingArea::calc_(double x1, double y1, double x2, double y2) {
+	return sqrt(pow(abs(x1-x2), 2) + pow(abs(y1-y2), 2));
+}
+
 void CDrawingArea::print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i) {
 	cr->move_to(points[i].x, double(height / scale) - points[i].y);
 
 	cr->set_source_rgb(points[i].r, points[i].g, points[i].b);
 
-	if (2 / scale >= 5) {
-		cr->arc(points[i].x, double(height / scale) - points[i].y, 2 / scale, 0,
+//	if (2 / scale >= 5) {
+//		cr->arc(points[i].x, double(height / scale) - points[i].y, 2 / scale, 0,
+//				2 * 3.14);
+//	} else {
+		cr->arc(points[i].x, double(height / scale) - points[i].y, 5 / scale, 0,
 				2 * 3.14);
-	} else {
-		cr->arc(points[i].x, double(height / scale) - points[i].y, 5, 0,
-				2 * 3.14);
-	}
+//	}
 	cr->fill();
 }
 
@@ -37,30 +41,64 @@ bool CDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
 	cr->translate(tx, ty);
 	m_entry_scale->set_text(std::to_string(scale));
 
-	if(points.size()>0){
-		cr->move_to(points[0].x, double(height / scale ) - points[0].y);
-		for(size_t i = 1; i < points.size(); i++)
-		{
-			if (points[i].x != 0 && points[i].y != 0){
+	double sx = width / scale;
+	double sy = height / scale;
+//	printf("Monitor settings, height=%i width=%i\n", height, width);
+//	printf("tx=%f ty=%f\n", tx, ty);
+//	printf("sx=%f sy=%f\n", sx, sy);
+	point_draw = 0;
+	int last_draw = 0;
+	double dist;
 
+	if (points.size() > 0) {
+		cr->move_to(points[0].x, double(height / scale) - points[0].y);
+		print_arc(cr, 0);
+
+//		if (scale > 0.15) {
+		for (size_t i = 1; i < points.size(); i++) {
+			dist = calc_(points[i].x, points[i].y, points[last_draw].x, points[last_draw].y);
+			if (dist > 2 / scale) {
 				if (scale > 0.7) {
-					print_arc(cr, i);
+					/* Отрисовка участка, попадающего в область видимости */
+					if ((points[i].x <= sx - tx && points[i].y <= sy + ty)
+							&& (points[i].x >= -tx && points[i].y >= ty)) {
+						print_arc(cr, i);
+						last_draw = i;
+						point_draw++;
+					}
 				}
 
-				else {
-					print_line(cr, i);
-					if (1 / scale != 1) {
-						i += int(1 / scale);
-					}
+				else if (scale > 0.15) {
+//					print_line(cr, i);
+					print_arc(cr, i);
+					last_draw = i;
+					point_draw++;
+//					if (1 / scale != 1) {
+//						i += int(5 / scale);
+//					}
+				} else {
+//					print_line(cr, i);
+					print_arc(cr, i);
+					last_draw = i;
+					point_draw++;
+//					if (1 / scale != 1) {
+//						i += int(1 / scale);
+//					}
 				}
 			}
 		}
+//		} else {
+//			for (size_t i = 1; i < points_small_scale.size(); i++) {
+//				print_line(cr, i);
+//			}
+//		}
 	}
 	return 0;
 }
 
 bool CDrawingArea::on_scroll_event(GdkEventScroll *event) {
 	double x, y, dx, dy;
+	int last_draw = 0;
 	x = event->x;
 	y = event->y;
 	if (event->direction == GDK_SCROLL_UP) {
@@ -77,6 +115,14 @@ bool CDrawingArea::on_scroll_event(GdkEventScroll *event) {
 		tx -= dx / scale;
 		ty -= dy / scale;
 	}
+
+	for (int i = 0; i < points.size(); i++){
+		dist = calc_(points[i].x, points[i].y, points[last_draw].x, points[last_draw].y);
+		if (dist > 2 / scale) {
+			last_draw = i;
+		}
+	}
+
 	queue_draw();
 	return 0;
 }
@@ -84,6 +130,9 @@ bool CDrawingArea::on_scroll_event(GdkEventScroll *event) {
 bool CDrawingArea::on_button_press(GdkEventButton *event) {
 	printf("on_button_press\n");
 	if (event->button == GDK_BUTTON_PRIMARY) {
+		printf("points drawed =%i\n", point_draw);
+//		printf("points size=%i\n", points.size());
+//		printf("points_small_scale size=%i\n", points_small_scale.size());
 //		Point p;
 //		p.x = event->x / scale - tx;
 //		p.y = (height - event->y) / scale + ty;
@@ -175,6 +224,9 @@ void CDrawingArea::uint16_to_double(const std::vector<CUsb::t_DATA> &src) {
 
 			if (src[i].x != 0 && src[i].y != 0) {
 				points.push_back(p);
+//				if (abs(p.x - src[i - 1].x) > 1 || abs(p.y - src[i - 1].y) > 1) {
+//					points_small_scale.push_back(p);
+//				}
 				if (p.x > Xmax)
 					Xmax = p.x;
 				if (p.x < Xmin)
@@ -189,7 +241,9 @@ void CDrawingArea::uint16_to_double(const std::vector<CUsb::t_DATA> &src) {
 					DSmin = p.dutyCycle;
 			}
 		}
-//		set_rgb(points);
+//		std::sort()
+		printf("points size=%i\n", points.size());
+		printf("points_small_scale size=%i\n", points_small_scale.size());
 		queue_draw();
 	}
 }

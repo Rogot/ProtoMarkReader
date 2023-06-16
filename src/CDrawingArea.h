@@ -11,6 +11,7 @@
 
 #include "c_usb.h"
 #include "gradient.h"
+#include "rtree.h"
 
 #define NORMAL_LENGTH 20
 #define SCROLL_SCALE_STEP 0.25
@@ -29,6 +30,26 @@ struct Point {
 	double r;
 	double g;
 	double b;
+
+	bool operator<(const Point &a) {
+		return this->x < a.x;
+	}
+
+	bool operator>(const Point &a) {
+		return this->x > a.x;
+	}
+
+	bool operator<=(const Point &a) {
+		return this->x <= a.x;
+	}
+
+	bool operator>=(const Point &a) {
+		return this->x >= a.x;
+	}
+
+	bool operator==(const Point &a) {
+		return this->x == a.x;
+	}
 };
 
 class CDrawingArea: public Gtk::DrawingArea {
@@ -38,7 +59,11 @@ public:
 	Gtk::Entry *m_entry_x;
 	Gtk::Entry *m_entry_y;
 	Gtk::Entry *m_entry_scale;
-	Gradient* gradient_interpol = new Gradient();
+
+	Gradient* gradient_interpol;
+
+	int point_draw = 0;
+	double dist;
 
 	bool mb_down = false;
 	int height, width;
@@ -52,11 +77,14 @@ public:
 	double DSmax = std::numeric_limits<double>::lowest(); //job maximum DutyCucly
 
 	std::vector<Point> points;
+	std::vector<Point> points_drawing;
+	std::vector<Point> points_small_scale;
 
 public:
 
 	void FitView();
 
+	double calc_(double x1, double y1, double x2, double y2);
 	void uint16_to_double(const std::vector<CUsb::t_DATA>& src);
 	void set_rgb(std::vector<Point>& src);
 	void print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i);
@@ -74,19 +102,23 @@ public:
 		signal_button_press_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_button_press));
 		signal_button_release_event().connect(sigc::mem_fun(*this, &CDrawingArea::on_button_release));
 
+		gradient_interpol = new Gradient();
+
+//		RTree<Point, double> tree;
+
 		for (int i = 0; i < 100; i++){
 			Point p;
 			p.x = i;
 			p.y = i;
 			p.dutyCycle = (double)i / (double)100;
+//			tree.Insert(p, p.dutyCycle);
 			points.push_back(p);
 		}
+
+//		double t = tree.Search({5,5});
+
 		DSmax = 0.99;
 		DSmin = 0;
-//		gradient_interpol->add_grad(DSmin, DSmax/3, {0.f,0.f,0.f}, {0.5f,0.f,0.f});
-//		gradient_interpol->add_grad(DSmax/3, DSmax*2/3, {0.5f,0.f,0.f}, {0.5f,0.f,1.f});
-//		gradient_interpol->add_grad(DSmax*2/3, DSmax, {0.5f,0.f,1.f}, {0.5f,1.f,0.5f});
-//		set_rgb(points);
 	}
 
 private:
