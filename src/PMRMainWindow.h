@@ -32,6 +32,7 @@ protected:
 //	GradientDrawingArea *m_gradient_drawing_area;
 	CUsb *m_c_usb;
 	Gtk::ImageMenuItem *m_menu_file_open;
+	Gtk::ImageMenuItem *m_menu_file_save;
 	/* COM page */
 	Gtk::MenuBar *mbar;
 	Gtk::Entry *m_com_select;
@@ -50,11 +51,13 @@ public:
 	//Signal handlers:
 	void OnButtonOpenPortClicked();
 	void OnButtonClosePortClicked();
-	void OpenFileActivate();
 	void UploadPointsClicked();
 	void ClearPointsClicked();
 	void OnButtonAddGradientBoardClicked();
 	void OnButtonClearGradientBoardClicked();
+
+	void OnSaveActivate();
+	void OnLoadActivate();
 
 public:
 	PMRMainWindow(BaseObjectType *cobject,
@@ -68,6 +71,13 @@ public:
 public:
 	/* Extra thread func */
 	void update_points();
+	double string_to_double(const std::string &s) {
+		std::istringstream i(s);
+		double x;
+		if (!(i >> x))
+			return 0;
+		return x;
+	}
 };
 
 #endif // PMRMAINWINDOW_H

@@ -87,8 +87,8 @@ public:
 	double calc_(double x1, double y1, double x2, double y2);
 	void uint16_to_double(const std::vector<CUsb::t_DATA>& src);
 	void set_rgb(std::vector<Point>& src);
-	void print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i);
-	void print_line(const Cairo::RefPtr<Cairo::Context> &cr, int i);
+	void print_arc(const Cairo::RefPtr<Cairo::Context> &cr, std::vector<Point>& points, int i);
+	void print_line(const Cairo::RefPtr<Cairo::Context> &cr, std::vector<Point>& points, int i);
 
 
 	CDrawingArea(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) :

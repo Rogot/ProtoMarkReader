@@ -5,7 +5,7 @@ double CDrawingArea::calc_(double x1, double y1, double x2, double y2) {
 	return sqrt(pow(abs(x1-x2), 2) + pow(abs(y1-y2), 2));
 }
 
-void CDrawingArea::print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i) {
+void CDrawingArea::print_arc(const Cairo::RefPtr<Cairo::Context> &cr, std::vector<Point>& points, int i) {
 	cr->move_to(points[i].x, double(height / scale) - points[i].y);
 
 	cr->set_source_rgb(points[i].r, points[i].g, points[i].b);
@@ -20,7 +20,7 @@ void CDrawingArea::print_arc(const Cairo::RefPtr<Cairo::Context> &cr, int i) {
 	cr->fill();
 }
 
-void CDrawingArea::print_line(const Cairo::RefPtr<Cairo::Context> &cr, int i) {
+void CDrawingArea::print_line(const Cairo::RefPtr<Cairo::Context> &cr, std::vector<Point>& points, int i) {
 	cr->line_to(points[i].x, double(height / scale ) - points[i].y);
 	cr->set_source_rgb(points[i].r, points[i].g, points[i].b);
 	cr->stroke();
@@ -50,50 +50,46 @@ bool CDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
 	int last_draw = 0;
 	double dist;
 
-	if (points.size() > 0) {
-		cr->move_to(points[0].x, double(height / scale) - points[0].y);
-		print_arc(cr, 0);
+	if (points_drawing.size() > 0) {
+		cr->move_to(points_drawing[0].x,
+				double(height / scale) - points_drawing[0].y);
+		if (scale > 0.7 || scale < 0.26) {
+			print_arc(cr, points_drawing, 0);
+		}
 
-//		if (scale > 0.15) {
-		for (size_t i = 1; i < points.size(); i++) {
-			dist = calc_(points[i].x, points[i].y, points[last_draw].x, points[last_draw].y);
-			if (dist > 2 / scale) {
-				if (scale > 0.7) {
-					/* Отрисовка участка, попадающего в область видимости */
-					if ((points[i].x <= sx - tx && points[i].y <= sy + ty)
-							&& (points[i].x >= -tx && points[i].y >= ty)) {
-						print_arc(cr, i);
-						last_draw = i;
-						point_draw++;
-					}
-				}
-
-				else if (scale > 0.15) {
-//					print_line(cr, i);
-					print_arc(cr, i);
-					last_draw = i;
+		if (scale < 0.7) {
+			for (size_t i = 1; i < points_drawing.size(); i++) {
+				if (scale > 0.15) {
+					print_line(cr, points_drawing, i);
+//					print_arc(cr, i);
+//					last_draw = i;
 					point_draw++;
 //					if (1 / scale != 1) {
 //						i += int(5 / scale);
 //					}
 				} else {
-//					print_line(cr, i);
-					print_arc(cr, i);
-					last_draw = i;
+					print_line(cr, points_drawing, i);
+//					print_arc(cr, i);
+//					last_draw = i;
 					point_draw++;
 //					if (1 / scale != 1) {
 //						i += int(1 / scale);
 //					}
 				}
 			}
+		} else {
+			for (size_t i = 1; i < points.size(); i++) {
+				/* Отрисовка участка, попадающего в область видимости */
+				if ((points[i].x <= sx - tx && points[i].y <= sy + ty)
+						&& (points[i].x >= -tx && points[i].y >= ty)) {
+					print_arc(cr, points, i);
+					last_draw = i;
+					point_draw++;
+				}
+			}
 		}
-//		} else {
-//			for (size_t i = 1; i < points_small_scale.size(); i++) {
-//				print_line(cr, i);
-//			}
-//		}
+		return 0;
 	}
-	return 0;
 }
 
 bool CDrawingArea::on_scroll_event(GdkEventScroll *event) {
@@ -116,9 +112,14 @@ bool CDrawingArea::on_scroll_event(GdkEventScroll *event) {
 		ty -= dy / scale;
 	}
 
-	for (int i = 0; i < points.size(); i++){
+	points_drawing.clear();
+
+	points_drawing.push_back(points[0]);
+
+	for (int i = 1; i < points.size(); i++){
 		dist = calc_(points[i].x, points[i].y, points[last_draw].x, points[last_draw].y);
-		if (dist > 2 / scale) {
+		if (dist > 6 / scale) {
+			points_drawing.push_back(points[i]);
 			last_draw = i;
 		}
 	}

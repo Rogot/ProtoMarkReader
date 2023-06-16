@@ -37,6 +37,16 @@ PMRMainWindow::PMRMainWindow(BaseObjectType *cobject,
 
 	m_c_usb = new CUsb();
 
+	/* Menu */
+	m_builder->get_widget("menu_file_save", m_menu_file_save);
+	m_builder->get_widget("menu_file_open", m_menu_file_open);
+
+	m_menu_file_save->signal_activate().connect(
+			sigc::mem_fun(*this, &PMRMainWindow::OnSaveActivate));
+	m_menu_file_open->signal_activate().connect(
+				sigc::mem_fun(*this, &PMRMainWindow::OnLoadActivate));
+
+
 	/* Connect signals. */
 	m_button_open_port->signal_clicked().connect(
 				sigc::mem_fun(*this, &PMRMainWindow::OnButtonOpenPortClicked));
@@ -68,8 +78,56 @@ PMRMainWindow::~PMRMainWindow(){
 	delete m_c_usb;
 }
 
-void PMRMainWindow::OpenFileActivate(){
+#include <fstream>
+#include <iostream>
 
+void PMRMainWindow::OnSaveActivate(){
+	std::ofstream out; /* for storage data in file */
+//	out.open("./saveDataPMR_large.txt", std::ofstream::out | std::ofstream::trunc);
+	out.open("./saveDataPMR_small.txt", std::ofstream::out | std::ofstream::trunc);
+	for (int i = 0; i < m_drawing_area->points.size(); i++){
+		out << m_drawing_area->points[i].x << ";"
+			<< m_drawing_area->points[i].y << ";"
+			<< m_drawing_area->points[i].dutyCycle << ";\n";
+	}
+	out.close();
+}
+
+void PMRMainWindow::OnLoadActivate(){
+	std::ifstream input; /* for storage data in file */
+//	input.open("./saveDataPMR_large.txt");
+	input.open("./saveDataPMR_small.txt");
+
+	if (input.is_open()) {
+
+		std::cout << "File is open\n";
+
+		std::string line;
+
+		m_drawing_area->points.clear();
+
+		while (getline(input, line)) {
+
+			std::string token;
+			Point p;
+
+			std::istringstream iss(line);
+
+			int i = 0;
+			while (getline(iss, token, ';')) {
+				if (i == 0)
+					p.x = atoi(token.c_str());
+				else if (i == 1)
+					p.y = atoi(token.c_str());
+				else if (i == 2) {
+					p.dutyCycle = string_to_double(token);
+					m_drawing_area->points.push_back(p);
+				}
+				i++;
+			}
+		}
+		input.close();
+	}
 }
 
 void PMRMainWindow::OnButtonOpenPortClicked(){
@@ -77,7 +135,7 @@ void PMRMainWindow::OnButtonOpenPortClicked(){
 
 	temp_port_name = m_com_select->get_text();
 	m_c_usb->set_port_name(temp_port_name);
-	m_c_usb->set_file_name("./saveDataPMR.txt");
+	m_c_usb->set_file_name("./saveDataPMR_large.txt");
 	int status = m_c_usb->open_usb(m_c_usb->get_port_name(), m_c_usb->get_file_name());
 
 	if (status > 0) {
